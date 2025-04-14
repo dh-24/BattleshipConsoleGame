@@ -1,53 +1,32 @@
 package battleship;
 
 public class Cell {
+    private Ship ship;
+    private boolean isHit;
 
-	// cell properties
-	
-	private final int row;
-	private final int col;
-	private boolean hasShip;
-	private boolean isHit;
-	
-	public Cell(int row, int col)
-	{
-		this.row = row;
-		this.col = col;
-		this.hasShip = false;
-		this.isHit = false;
-	}
-	
-	// getters and setters
-	
-	public int getRow()
-	{
-		return row;
-	}
-	
-	public int getCol()
-	{
-		return col;
-	}
-	
-	public boolean hasShip()
-	{
-		return hasShip;
-	}
-	
-	public void setShip(boolean hasShip)
-	{
-		this.hasShip = hasShip;
-	}
-	
-	public boolean isHit()
-	{
-		return isHit;
-	}
-	
-	public void setHit(boolean isHit)
-	{
-		this.isHit = isHit;
-	}
-	
-	
+    public Cell() {
+        this.ship = null;
+        this.isHit = false;
+    }
+
+    public void placeShip(Ship ship) {
+        this.ship = ship;
+    }
+
+    public boolean hasShip() {
+        return ship != null;
+    }
+
+    public Ship getShip() {
+        return ship;
+    }
+
+    public void markHit() {
+        this.isHit = true;
+    }
+
+    public boolean isHit() {
+        return isHit;
+    }
 }
+

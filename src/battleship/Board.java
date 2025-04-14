@@ -1,86 +1,86 @@
 package battleship;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-public class Ship {
-	
-	private final ShipType type;
-	private final List<int[]> coordinates;
-	
-	public Ship(ShipType type, int startRow, int startCol, String orientation)
-	{
-		this.type = type;
-		this.coordinates = new ArrayList<>();
-		
-		switch (type)
-		{
-		case DESTROYER:
-			// 2x2 square
-			coordinates.add(new int[] {startRow, startCol});
-			coordinates.add(new int[] {startRow, startCol + 1});
-			coordinates.add(new int[] {startRow + 1, startCol});
-			coordinates.add(new int[] {startRow + 1, startCol + 1});
-		
-		case SUBMARINE:
-			// diagonal 3 cells
-			if (orientation.equalsIgnoreCase("LR")) {
-                    coordinates.add(new int[]{startRow, startCol});
-                    coordinates.add(new int[]{startRow + 1, startCol + 1});
-                    coordinates.add(new int[]{startRow + 2, startCol + 2});
-                } else if (orientation.equalsIgnoreCase("RL")) {
-                    coordinates.add(new int[]{startRow, startCol});
-                    coordinates.add(new int[]{startRow + 1, startCol - 1});
-                    coordinates.add(new int[]{startRow + 2, startCol - 2});
-                }
-                break;
+public class Board {
+    private static final int SIZE = 10;
+    private final Cell[][] grid;
+    private final List<Ship> ships;
 
-			
-		case CRUISER:
-			// straight line 3 cells
-			if (orientation.equalsIgnoreCase("H")) {
-				coordinates.add(new int[]{startRow, startCol});
-				coordinates.add(new int[]{startRow, startCol + 1});
-				coordinates.add(new int[]{startRow, startCol + 2});
-			} else if (orientation.equalsIgnoreCase("V")) {
-				coordinates.add(new int[]{startRow, startCol});
-				coordinates.add(new int[]{startRow + 1, startCol});
-				coordinates.add(new int[]{startRow + 2, startCol});
-			}
-		
-			break;
-	}
-	 // Initialize hit tracker to all false
-	 for (int i = 0; i < coordinates.size(); i++) {
-		hitTracker.add(new boolean[]{false});
-	}
-}
+    public Board() {
+        grid = new Cell[SIZE][SIZE];
+        ships = new ArrayList<>();
 
-public ShipType getType() {
-	return type;
-}
-
-	public List<int[]> getCoordinates() 
-	{
-		return coordinates;
-	}
-	
-	public boolean isHit(int row, int col) {
-        for (int i = 0; i < coordinates.size(); i++) {
-            int[] coord = coordinates.get(i);
-            if (coord[0] == row && coord[1] == col) {
-                hitTracker.get(i)[0] = true;
-                return true;
-            }
-        }
-        return false;
+        for (int i = 0; i < SIZE; i++)
+            for (int j = 0; j < SIZE; j++)
+                grid[i][j] = new Cell();
     }
 
-    public boolean isSunk() {
-        for (boolean[] hit : hitTracker) {
-            if (!hit[0]) return false;
+    public void placeShipsManually(Scanner scanner) {
+        for (ShipType type : ShipType.values()) {
+            boolean placed = false;
+            while (!placed) {
+                System.out.println("Place your " + type + ":");
+                String input = Utils.promptForInput(scanner, "Enter starting coordinate (e.g., B4): ");
+                int[] coords = Utils.parseCoords(input);
+
+                String orientation = Utils.promptForInput(scanner, "Enter orientation (H, V, DR, DL): ").toUpperCase();
+                placed = placeShip(type, coords[0], coords[1], orientation);
+                if (!placed) System.out.println("Invalid placement. Try again.");
+            }
         }
+    }
+
+    public void placeShipsRandomly() {
+        for (ShipType type : ShipType.values()) {
+            boolean placed = false;
+            while (!placed) {
+                int row = (int) (Math.random() * SIZE);
+                int col = (int) (Math.random() * SIZE);
+                String orientation = Utils.getRandomOrientation();
+                placed = placeShip(type, row, col, orientation);
+            }
+        }
+    }
+
+    public boolean placeShip(ShipType type, int startRow, int startCol, String orientation) {
+        Ship ship = new Ship(type, startRow, startCol, orientation);
+        for (int[] c : ship.getCoordinates())
+            if (!Utils.inBounds(c[0], c[1]) || grid[c[0]][c[1]].hasShip()) return false;
+
+        for (int[] c : ship.getCoordinates()) grid[c[0]][c[1]].placeShip(ship);
+        ships.add(ship);
         return true;
+    }
+
+    public boolean fireAt(int row, int col) {
+        grid[row][col].markHit();
+        return grid[row][col].hasShip() && grid[row][col].getShip().registerHit(row, col);
+    }
+
+    public boolean alreadyTried(int row, int col) {
+        return grid[row][col].isHit();
+    }
+
+    public boolean allShipsSunk() {
+        for (Ship s : ships) if (!s.isSunk()) return false;
+        return true;
+    }
+
+    public void print(boolean hideShips) {
+        System.out.print("  ");
+        for (int i = 1; i <= SIZE; i++) System.out.print(i + " ");
+        System.out.println();
+        for (int i = 0; i < SIZE; i++) {
+            System.out.print((char) ('A' + i) + " ");
+            for (int j = 0; j < SIZE; j++) {
+                Cell cell = grid[i][j];
+                if (cell.isHit()) System.out.print(cell.hasShip() ? "X " : "O ");
+                else if (cell.hasShip() && !hideShips) System.out.print("S ");
+                else System.out.print("~ ");
+            }
+            System.out.println();
+        }
     }
 }
 
